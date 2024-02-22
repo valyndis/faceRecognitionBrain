@@ -11,13 +11,9 @@ import ParticlesBg from 'particles-bg'
 
 
 const returnClarifaiRequestOptions = (imageUrl) => {
-  // Your PAT (Personal Access Token) can be found in the portal under Authentification
   const PAT = '6b418b053770411e8c9ed931dddfc3e0';
-  // Specify the correct user_id/app_id pairings
-  // Since you're making inferences outside your app's scope
   const USER_ID = 'valyndis';       
   const APP_ID = 'my-first-application';
-  // Change these to whatever model and image URL you want to use
   const MODEL_ID = 'face-detection';  
   const IMAGE_URL = imageUrl;
   const raw = JSON.stringify({
@@ -47,35 +43,25 @@ const requestOptions = {
 return requestOptions
 }
 
-
-
-///////////////////////////////////////////////////////////////////////////////////
-// YOU DO NOT NEED TO CHANGE ANYTHING BELOW THIS LINE TO RUN THIS EXAMPLE
-///////////////////////////////////////////////////////////////////////////////////
-
-
-
-// NOTE: MODEL_VERSION_ID is optional, you can also call prediction with the MODEL_ID only
-// https://api.clarifai.com/v2/models/{YOUR_MODEL_ID}/outputs
-// this will default to the latest version_id
+const initialState = {
+  input:'',
+  imageUrl:'',
+  box: {},
+  route: 'signin',
+  isSignedIn: false,
+  user: {
+    id: '',
+    name: '',
+    email: '',
+    entries: 0,
+    joined: ''
+  }
+}
 
 class App extends Component {
   constructor() {
     super()
-    this.state = {
-      input:'',
-      imageUrl:'',
-      box: {},
-      route: 'signin',
-      isSignedIn: false,
-      user: {
-        id: '',
-        name: '',
-        email: '',
-        entries: 0,
-        joined: ''
-      }
-    }
+    this.state = initialState;
   }
   
 
@@ -91,12 +77,10 @@ class App extends Component {
 
 
   calculateFaceLocation = (data) => {
-    console.log(data.outputs[0].data.regions[0].region_info.bounding_box);
     const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
     const image = document.getElementById('inputimage');
     const width = Number(image.width);
     const height = Number(image.height);
-    console.log(width, height);
     return {
       leftCol: clarifaiFace.left_col * width,
       topRow: clarifaiFace.top_row * height,
@@ -107,13 +91,11 @@ class App extends Component {
   }
 
   displayFaceBox = (box) => {
-    console.log(box);
     this.setState({box: box});
   }
 
   onInputChange = (event) => {
     this.setState({input: event.target.value});
-    console.log(event.target.value);
   }
 
   onPictureSubmit = () => {
@@ -121,24 +103,25 @@ class App extends Component {
     fetch("https://api.clarifai.com/v2/models/" + 'face-detection' + "/outputs", returnClarifaiRequestOptions(this.state.input))
     .then(response => response.json())
     .then(response => this.displayFaceBox(this.calculateFaceLocation(response)))
-    .then(fetch('http://localhost:3000/image', {
-      method: 'put',
-      headers: {'Content-type': 'application/json'},
-      body: JSON.stringify({
-        id: this.state.user.id
+    .then(
+      fetch('http://localhost:3000/image', {
+        method: 'put',
+        headers: {'Content-type': 'application/json'},
+        body: JSON.stringify({
+          id: this.state.user.id
+        })
       })
-    })
-    .then(response => response.json())
-    .then(count => {
-      console.log(count)
-      this.setState(Object.assign(this.state.user, {entries: count}))
-    })
+      .then(response => response.json())
+      .then(count => {
+        this.setState(Object.assign(this.state.user, {entries: count}))
+      })
+      .catch(error => console.log('error', error))
     )
     .catch(error => console.log('error', error))}
 
   onRouteChange = (route) => {
     if(route === 'signin'){
-      this.setState({isSignedIn: false})
+      this.setState(initialState)
     } else if (route === 'home') {
       this.setState({isSignedIn: true})
     }
