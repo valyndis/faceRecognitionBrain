@@ -9,40 +9,6 @@ import Register from './components/Register/Register';
 import './App.css'
 import ParticlesBg from 'particles-bg'
 
-
-const returnClarifaiRequestOptions = (imageUrl) => {
-  const PAT = '6b418b053770411e8c9ed931dddfc3e0';
-  const USER_ID = 'valyndis';       
-  const APP_ID = 'my-first-application';
-  const MODEL_ID = 'face-detection';  
-  const IMAGE_URL = imageUrl;
-  const raw = JSON.stringify({
-    "user_app_id": {
-        "user_id": USER_ID,
-        "app_id": APP_ID
-    },
-    "inputs": [
-        {
-            "data": {
-                "image": {
-                    "url": IMAGE_URL
-                }
-            }
-        }
-    ]
-});
-
-const requestOptions = {
-    method: 'POST',
-    headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Key ' + PAT
-    },
-    body: raw
-};
-return requestOptions
-}
-
 const initialState = {
   input:'',
   imageUrl:'',
@@ -77,7 +43,7 @@ class App extends Component {
 
 
   calculateFaceLocation = (data) => {
-    const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
+    const clarifaiFace = data.data.regions[0].region_info.bounding_box;
     const image = document.getElementById('inputimage');
     const width = Number(image.width);
     const height = Number(image.height);
@@ -100,7 +66,13 @@ class App extends Component {
 
   onPictureSubmit = () => {
     this.setState({imageUrl: this.state.input})
-    fetch("https://api.clarifai.com/v2/models/" + 'face-detection' + "/outputs", returnClarifaiRequestOptions(this.state.input))
+    fetch('http://localhost:3000/imageurl', {
+        method: 'post',
+        headers: {'Content-type': 'application/json'},
+        body: JSON.stringify({
+          input: this.state.input
+        })
+      })
     .then(response => response.json())
     .then(response => this.displayFaceBox(this.calculateFaceLocation(response)))
     .then(
